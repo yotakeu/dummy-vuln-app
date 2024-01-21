@@ -4,30 +4,26 @@ on: [push, repository_dispatch]
 
 jobs:
 
-  build:
+ build:
 
-    runs-on: ubuntu-latest
+   runs-on: ubuntu-latest
 
-    steps:
-    - uses: actions/checkout@v1
+   steps:
 
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag sysdiglabs/dummy-vuln-app:latest
+uses: actions/checkout@v1
 
-    - name: Sysdig Secure Inline Scan
-      id: scan
-      uses: sysdiglabs/scan-action@v3
-      with:
-        # Tag of the image to analyse
-        image-tag: "sysdiglabs/dummy-vuln-app:latest"
-        # API token for Sysdig Scanning auth
-        sysdig-secure-token: ${{ secrets.KUBELAB_SECURE_API_TOKEN }}
-        dockerfile-path: ./Dockerfile
-        input-type: docker-daemon
-        run-as-user: root
-        ignore-failed-scan: true
+name: Build the Docker image
 
-    - uses: github/codeql-action/upload-sarif@v1
-      if: always()
-      with:
-        sarif_file: ${{ steps.scan.outputs.sarifReport }}
+     run: docker build . --file Dockerfile --tag sysdiglabs/dummy-vuln-app:latest
+
+name: download Sysdig scanner
+
+     run: wget "https://download.sysdig.com/scanning/bin/sysdig-cli-scanner/$(curl -L -s https://download.sysdig.com/scanning/sysdig-cli-scanner/latest_version.txt)/linux/amd64/sysdig-cli-scanner"
+
+name: chmod
+
+     run: chmod +x ./sysdig-cli-scanner
+
+name: execute Sysdig scanner
+
+     run: SECURE_API_TOKEN=${{secrets.SYSDIG_SECURE_TOKEN}} ./sysdig-cli-scanner --apiurl   sysdiglabs/dummy-vuln-app:latest
